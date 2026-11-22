@@ -75,10 +75,9 @@ bash drawer/install-drawer.sh          # install and start; "remove" uninstalls
 - The windows are Wayland layer-shell surfaces, like Plasma's own panels, so they also show over the desktop
   in "Show Desktop" mode. A 2 px invisible strip on the left edge notices the pointer.
 - The drawer closes when the mouse leaves it or with Esc. **PIN** keeps it open.
-- **Desktop only** (default): the drawer and its edge strip work only while the desktop is free (no open windows) or
-  Show Desktop is on, so the left edge of your apps is never touched. A small KWin script (`drawer/kwin/`) reports this
-  over D-Bus. The `DESKTOP / ALWAYS` button in the drawer switches the mode.
-- Launcher buttons: edit `~/.config/cyberneon-drawer/launchers.json` (`[{"name": "FILES", "cmd": "dolphin"}, ...]`).
+- **Desktop only** (default): the drawer works when the desktop is free: Show Desktop is on, or no open window touches
+  the left screen edge. Windows elsewhere on the screen do not matter, so you do not have to close anything.
+  A small KWin script (`drawer/kwin/`) reports this over D-Bus. The `DESKTOP / ALWAYS` button in the drawer switches the mode.
 
 ## Build the Windows installer yourself
 
