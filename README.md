@@ -59,6 +59,21 @@ Put your music in `~/Music` (Windows: `Music`) or press **FOLDER**. `Space` play
 Make an album with **NEW ALBUM**, then add songs with **+ FILES**, the **+** button on a song, or by dragging
 files into the window. The full guide is in [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 
+## CyberNeon Drawer (Linux, KDE Plasma)
+
+A neon side panel that slides out when you push the mouse against the **left screen edge**: clock, now playing
+(with controls and visualizer), CPU / RAM / disk / temperature / network, volume, quick launchers and notes.
+
+```bash
+bash drawer/install-drawer.sh          # install and start; "remove" uninstalls
+```
+
+- Needs `pyside6`; volume uses `wpctl` (PipeWire) or `pactl`.
+- The drawer closes when the mouse leaves it, when you click another window, or with Esc. **PIN** keeps it open.
+- Launcher buttons: edit `~/.config/cyberneon-drawer/launchers.json` (`[{"name": "FILES", "cmd": "dolphin"}, ...]`).
+- How it works: a small KWin script (`drawer/kwin/`) listens to the screen edge and places the window; the app draws and animates it.
+  If the left edge has another action in System Settings > Screen Edges, set it to "No Action".
+
 ## Build the Windows installer yourself
 
 On a Windows PC with Python, double-click `windows\build-windows.bat` (add Inno Setup for the installer:
