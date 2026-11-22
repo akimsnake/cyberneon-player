@@ -55,8 +55,7 @@ function showDrawer() {
     var w = findDrawer();
     if (!w) { log("cyberneon-drawer: no drawer window found"); return; }
     place(w);
-    w.minimized = false;
-    workspace.activeWindow = w;
+    w.minimized = false;          // not activated on purpose: activating would end "Show Desktop" mode
 }
 
 workspace.windowAdded.connect(setup);

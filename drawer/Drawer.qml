@@ -22,6 +22,7 @@ Window {
     readonly property color dim: "#8C7FAD"
 
     property bool shown: false
+    property bool armed: true                 // the pointer has been outside the window since the last close
     property bool pinned: false
     property real slide: -400                 // x of the panel: 0 = in, negative = hidden to the left
     property date now: new Date()
@@ -39,6 +40,7 @@ Window {
     function openDrawer() {
         leave.stop()
         shown = true
+        armed = false
         slide = 0
         backend.refresh()
         poll()
@@ -51,10 +53,17 @@ Window {
         backend.saveNotes(notes.text)
         slide = -(win.width + 30)
     }
-    // KWin un-minimizes and activates the window -> slide in; it loses focus (you clicked elsewhere) -> slide out
-    onActiveChanged: {
-        if (active) openDrawer()
-        else if (!pinned) closeDrawer()
+    // KWin un-minimizes the window when the pointer pushes against the edge (without giving it focus, so other
+    // windows are left alone). The pointer is then over the window -> slide in. It leaves, or you click elsewhere -> out.
+    onActiveChanged: if (!active && shown && !pinned) closeDrawer()
+    Item {
+        anchors.fill: parent
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) win.armed = true
+                else if (win.armed && !win.shown) win.openDrawer()
+            }
+        }
     }
 
     Shortcut { sequence: "Escape"; onActivated: win.closeDrawer() }
