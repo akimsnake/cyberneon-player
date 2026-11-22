@@ -169,6 +169,8 @@ def shutil_which(name):
 def main():
     # every window of this program becomes a Wayland layer-shell surface (like Plasma's panels)
     os.environ.setdefault("QT_WAYLAND_SHELL_INTEGRATION", "layer-shell")
+    if not os.environ.get("CYBERNEON_DRAWER_GPU"):         # the panel is simple: software rendering uses ~2.5x less memory
+        os.environ.setdefault("QT_QUICK_BACKEND", "software")
     app = QGuiApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName(INSTANCE)                      # the window class KWin script looks for

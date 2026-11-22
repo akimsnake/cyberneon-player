@@ -69,6 +69,7 @@ sudo pacman -S layer-shell-qt          # once
 bash drawer/install-drawer.sh          # install and start; "remove" uninstalls
 ```
 
+- Memory: the drawer renders in software (about 110 MB); set `CYBERNEON_DRAWER_GPU=1` to use the GPU instead.
 - Needs `pyside6` (from the distribution, so it uses the system Qt) and `layer-shell-qt`.
   Volume uses `wpctl` (PipeWire) or `pactl`.
 - The windows are Wayland layer-shell surfaces, like Plasma's own panels, so they also show over the desktop
