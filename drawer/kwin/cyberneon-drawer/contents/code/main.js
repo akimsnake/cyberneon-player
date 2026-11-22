@@ -4,7 +4,10 @@
 // The drawer program itself plays the slide animation and hides (minimizes) the window again.
 
 var CLASS = "cyberneon-drawer";
-print("cyberneon-drawer: script loaded");
+function log(msg) {                    // warnings always reach the journal (debug messages are hidden by default)
+    try { console.warn(msg); } catch (e) { print(msg); }
+}
+log("cyberneon-drawer: script loaded");
 var WIDTH = 380;                       // must match the width in Drawer.qml
 
 function isDrawer(w) {
@@ -36,7 +39,7 @@ function place(w) {
 
 function setup(w) {
     if (!isDrawer(w)) return;
-    print("cyberneon-drawer: found window " + w.resourceClass + " / " + w.desktopFileName);
+    log("cyberneon-drawer: found window " + w.resourceClass + " / " + w.desktopFileName);
     set(w, "skipTaskbar", true);
     set(w, "skipPager", true);
     set(w, "skipSwitcher", true);
@@ -48,9 +51,9 @@ function setup(w) {
 }
 
 function showDrawer() {
-    print("cyberneon-drawer: left edge triggered");
+    log("cyberneon-drawer: left edge triggered");
     var w = findDrawer();
-    if (!w) { print("cyberneon-drawer: no drawer window found"); return; }
+    if (!w) { log("cyberneon-drawer: no drawer window found"); return; }
     place(w);
     w.minimized = false;
     workspace.activeWindow = w;
@@ -62,4 +65,4 @@ for (var i = 0; i < existing.length; i++) setup(existing[i]);
 
 var LEFT = (typeof KWin !== "undefined" && KWin.ElectricLeft !== undefined) ? KWin.ElectricLeft : 6;
 var ok = registerScreenEdge(LEFT, showDrawer);
-print("cyberneon-drawer: edge " + LEFT + " registered: " + ok);
+log("cyberneon-drawer: edge " + LEFT + " registered: " + ok);
