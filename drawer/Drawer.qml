@@ -8,13 +8,17 @@ import org.kde.layershell 1.0 as LayerShell
 //  - the drawer itself, shown while the pointer is on it, with a slide-in / slide-out animation
 QtObject {
     id: app
+    property var desktopWatch: Connections {
+        target: backend
+        function onDesktopChanged() { if (!backend.available) { win.pinned = false; win.closeDrawer() } }
+    }
     property int bottomReserve: 64            // space left for the bottom Plasma panel (px)
 
     property var hotZone: Window {
         id: hot
         width: 2
         height: Screen.height - app.bottomReserve
-        visible: true
+        visible: backend.available          // "desktop only": the edge strip disappears while windows are open
         flags: Qt.FramelessWindowHint
         color: "transparent"
         title: "CyberNeon Drawer edge"
@@ -160,7 +164,7 @@ QtObject {
             RowLayout {
                 Layout.fillWidth: true
                 Text {
-                    text: "CYBERNEON // DRAWER"
+                    text: "CYBERNEON"
                     color: win.magenta
                     font.family: "monospace"
                     font.pixelSize: 13
@@ -168,6 +172,7 @@ QtObject {
                     font.letterSpacing: 2
                     Layout.fillWidth: true
                 }
+                DButton { text: backend.desktopOnly ? "DESKTOP" : "ALWAYS"; accent: win.violet; active: backend.desktopOnly; onClicked: backend.toggleDesktopOnly() }
                 DButton { text: win.pinned ? "PINNED" : "PIN"; accent: win.cyan; active: win.pinned; onClicked: win.pinned = !win.pinned }
                 DButton { text: "<<"; accent: win.magenta; onClicked: { win.pinned = false; win.closeDrawer() } }
             }

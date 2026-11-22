@@ -8,7 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QProcess, QTimer, QUrl, Signal, Slot
+from PySide6.QtCore import ClassInfo, Property, QObject, QProcess, QTimer, QUrl, Signal, Slot
+from PySide6.QtDBus import QDBusConnection
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtQml import QQmlApplicationEngine
@@ -48,9 +49,27 @@ def load_launchers():
     return list(DEFAULT_LAUNCHERS)
 
 
+@ClassInfo({"D-Bus Interface": "org.cyberneon.Drawer"})
+class DesktopLink(QObject):
+    """Receives 'desktop mode' from the KWin script (see kwin/). Only this one slot is exported on D-Bus."""
+    changed = Signal(bool)
+
+    @Slot(bool)
+    def setDesktopMode(self, on):
+        self.changed.emit(bool(on))
+
+
+def load_config():
+    try:
+        return json.loads((CONFIG / "config.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 class Backend(QObject):
     statsChanged = Signal()
     volumeChanged = Signal()
+    desktopChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -60,7 +79,40 @@ class Backend(QObject):
         self._tick = 0
         self._launchers = load_launchers()
         self._notes_file = DATA / "notes.txt"
+        self._desktop_only = bool(load_config().get("desktop_only", True))
+        self._desktop_mode = True              # until the KWin script says otherwise, the drawer works
         self.read_volume()
+
+    # ----- "only on the desktop" -----
+    @Property(bool, notify=desktopChanged)
+    def desktopOnly(self):
+        return self._desktop_only
+
+    @Property(bool, notify=desktopChanged)
+    def desktopMode(self):
+        return self._desktop_mode
+
+    @Property(bool, notify=desktopChanged)
+    def available(self):
+        return (not self._desktop_only) or self._desktop_mode
+
+    @Slot(bool)
+    def setDesktopMode(self, on):
+        if on != self._desktop_mode:
+            self._desktop_mode = on
+            self.desktopChanged.emit()
+
+    @Slot()
+    def toggleDesktopOnly(self):
+        self._desktop_only = not self._desktop_only
+        try:
+            CONFIG.mkdir(parents=True, exist_ok=True)
+            cfg = load_config()
+            cfg["desktop_only"] = self._desktop_only
+            (CONFIG / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+        except OSError:
+            pass
+        self.desktopChanged.emit()
 
     # ----- numbers -----
     @Property("QVariantMap", notify=statsChanged)
@@ -192,6 +244,13 @@ def main():
         if os.path.isdir(path + "/org/kde/layershell"):
             engine.addImportPath(path)
     backend = Backend()
+    link = DesktopLink()
+    link.changed.connect(backend.setDesktopMode)
+    bus = QDBusConnection.sessionBus()
+    if bus.registerService("org.cyberneon.Drawer"):
+        bus.registerObject("/Drawer", link, QDBusConnection.RegisterOption.ExportAllSlots)
+    else:
+        print("D-Bus name org.cyberneon.Drawer is busy: 'desktop only' will not follow the windows", file=sys.stderr)
     engine.rootContext().setContextProperty("backend", backend)
     engine.load(QUrl.fromLocalFile(str(HERE / "Drawer.qml")))
     if not engine.rootObjects():

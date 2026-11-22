@@ -14,7 +14,9 @@ kwin_call() {
   return 1
 }
 
-# the first version used a KWin script; it is not needed any more, take it away
+KWIN_PKG="$SRC/kwin/cyberneon-drawer"
+
+# the KWin script only reports "desktop is free / windows are open" to the drawer
 remove_old_script() {
   kwin_call /Scripting org.kde.kwin.Scripting.unloadScript cyberneon-drawer || true
   kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled false 2>/dev/null || true
@@ -39,7 +41,12 @@ if [ "${XDG_SESSION_TYPE:-}" != "wayland" ]; then
 fi
 
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/autostart"
+
+# KWin keeps a loaded script in memory: unload, replace the files, switch off and on
 remove_old_script
+kpackagetool6 --type=KWin/Script --install "$KWIN_PKG" >/dev/null
+kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled true
+kwin_call /KWin reconfigure || true
 
 cat > "$HOME/.local/bin/cyberneon-drawer" << LAUNCH
 #!/usr/bin/env bash
