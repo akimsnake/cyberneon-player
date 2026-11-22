@@ -7,6 +7,7 @@ function log(msg) {
 }
 
 var last = null;
+var blocker = "";
 
 function onThisDesktop(w) {
     if (w.onAllDesktops) return true;
@@ -41,7 +42,11 @@ function compute() {
     if (showing) return true;
     var list = workspace.windowList();
     for (var i = 0; i < list.length; i++) {
-        if (isAppWindow(list[i]) && touchesLeftEdge(list[i])) return false;
+        if (isAppWindow(list[i]) && touchesLeftEdge(list[i])) {
+            var g = list[i].frameGeometry;
+            blocker = String(list[i].resourceClass) + " \"" + String(list[i].caption).substring(0, 40) + "\" x=" + g.x + " w=" + g.width;
+            return false;
+        }
     }
     return true;
 }
@@ -50,7 +55,7 @@ function report(force) {
     var now = compute();
     if (!force && now === last) return;
     last = now;
-    log("cyberneon-drawer: desktop mode " + now);
+    log("cyberneon-drawer: desktop mode " + now + (now ? "" : "  blocked by: " + blocker));
     callDBus("org.cyberneon.Drawer", "/Drawer", "org.cyberneon.Drawer", "setDesktopMode", now);
 }
 
