@@ -31,7 +31,7 @@ function place(w) {
     try { out = workspace.screenAt(workspace.cursorPos); } catch (e) { }
     if (!out) out = workspace.activeScreen;
     var area = workspace.clientArea(KWin.MaximizeArea, out, workspace.currentDesktop);   // without panels
-    w.frameGeometry = Qt.rect(area.x, area.y, WIDTH, area.height);
+    w.frameGeometry = { x: area.x, y: area.y, width: WIDTH, height: area.height };
 }
 
 function setup(w) {
