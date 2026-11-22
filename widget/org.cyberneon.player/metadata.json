@@ -1,0 +1,14 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "org.cyberneon.player",
+    "Name": "CyberNeon Player",
+    "Description": "Neon cyberpunk widget for CyberNeon Player",
+    "Icon": "multimedia-player",
+    "Category": "Multimedia",
+    "Version": "1.0",
+    "License": "GPL-3.0+",
+    "Authors": [{ "Name": "Me" }]
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}

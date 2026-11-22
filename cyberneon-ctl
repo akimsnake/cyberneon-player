@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Send one command to a running CyberNeon Player.
+Usage: cyberneon-ctl playpause | play | pause | next | prev | seek <ms> | volume <0..1> | shuffle | repeat"""
+import os
+import socket
+import sys
+
+path = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "cyberneon-player.sock")
+cmd = " ".join(sys.argv[1:]) or "state"
+try:
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(2)
+    s.connect(path)
+    s.sendall((cmd + "\n").encode())
+    print(s.recv(256).decode().strip())
+except OSError:
+    print("offline", file=sys.stderr)
+    sys.exit(1)
