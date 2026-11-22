@@ -36,6 +36,7 @@ else:
 BIN_CACHE = CACHE / "bin"            # disc images (.bin) converted to FLAC, once
 library.BIN_CACHE_DIR = str(BIN_CACHE)
 USERFILE = DATA / "albums.json"      # your own albums
+COVER_CACHE_MAX = 40                 # decoded covers kept in memory (512x512 each, about 1 MB)
 COVERS = DATA / "covers"             # copies of the pictures you chose
 
 
@@ -863,6 +864,8 @@ class Backend(QObject):
                 img = img.scaled(512, 512, Qt.AspectRatioMode.KeepAspectRatio,
                                  Qt.TransformationMode.SmoothTransformation)
             self._cover_cache[key] = img
+            while len(self._cover_cache) > COVER_CACHE_MAX:        # keep memory flat on big libraries
+                self._cover_cache.pop(next(iter(self._cover_cache)))
         return img
 
 
