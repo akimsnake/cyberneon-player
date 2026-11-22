@@ -1,17 +1,51 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import org.kde.layershell 1.0 as LayerShell
 
-// The drawer window. KWin (see kwin/ script) places it at the left edge and un-minimizes it when the pointer
-// pushes against the edge; this file plays the slide-in / slide-out and draws the widgets.
-Window {
+// Two layer-shell windows (like Plasma's own panels, so "Show Desktop" does not hide them):
+//  - a 2 px invisible strip on the left screen edge that notices the pointer
+//  - the drawer itself, shown while the pointer is on it, with a slide-in / slide-out animation
+QtObject {
+    id: app
+
+    property var hotZone: Window {
+        id: hot
+        width: 2
+        height: 1000
+        visible: true
+        flags: Qt.FramelessWindowHint
+        color: "transparent"
+        title: "CyberNeon Drawer edge"
+        LayerShell.Window.scope: "cyberneon-drawer-edge"
+        LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+        LayerShell.Window.layer: LayerShell.Window.LayerTop
+        LayerShell.Window.exclusionZone: -1
+        LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityNone
+        LayerShell.Window.desiredSize: Qt.size(2, 0)
+
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) win.armed = true
+                else if (win.armed && !win.shown) win.openDrawer()
+            }
+        }
+    }
+
+    property var drawerWindow: Window {
     id: win
     width: 380
-    height: 900
-    visible: true
+    height: 1000
+    visible: false
     flags: Qt.FramelessWindowHint
     color: "transparent"
     title: "CyberNeon Drawer"
+    LayerShell.Window.scope: "cyberneon-drawer"
+    LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+    LayerShell.Window.layer: LayerShell.Window.LayerTop
+    LayerShell.Window.exclusionZone: -1
+    LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityOnDemand
+    LayerShell.Window.desiredSize: Qt.size(380, 0)
 
     readonly property color panel: "#14091F"
     readonly property color edge: "#3B1F6B"
@@ -33,14 +67,15 @@ Window {
         NumberAnimation {
             duration: 260
             easing.type: Easing.OutCubic
-            onRunningChanged: if (!running && !win.shown) win.showMinimized()    // fully hidden: get out of the way
+            onRunningChanged: if (!running && !win.shown) win.visible = false    // fully hidden: unmap the window
         }
     }
 
     function openDrawer() {
         leave.stop()
-        shown = true
         armed = false
+        shown = true
+        visible = true
         slide = 0
         backend.refresh()
         poll()
@@ -53,18 +88,7 @@ Window {
         backend.saveNotes(notes.text)
         slide = -(win.width + 30)
     }
-    // KWin un-minimizes the window when the pointer pushes against the edge (without giving it focus, so other
-    // windows are left alone). The pointer is then over the window -> slide in. It leaves, or you click elsewhere -> out.
-    onActiveChanged: if (!active && shown && !pinned) closeDrawer()
-    Item {
-        anchors.fill: parent
-        HoverHandler {
-            onHoveredChanged: {
-                if (!hovered) win.armed = true
-                else if (win.armed && !win.shown) win.openDrawer()
-            }
-        }
-    }
+    onActiveChanged: if (!active && shown && !pinned && !hover.hovered) closeDrawer()
 
     Shortcut { sequence: "Escape"; onActivated: win.closeDrawer() }
     Timer { id: grace; interval: 1800; onTriggered: if (!hover.hovered && !win.pinned) win.closeDrawer() }
@@ -397,4 +421,5 @@ Window {
             }
         }
     }
+}
 }

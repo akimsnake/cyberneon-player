@@ -167,7 +167,10 @@ def shutil_which(name):
 
 
 def main():
+    # every window of this program becomes a Wayland layer-shell surface (like Plasma's panels)
+    os.environ.setdefault("QT_WAYLAND_SHELL_INTEGRATION", "layer-shell")
     app = QGuiApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     app.setApplicationName(INSTANCE)                      # the window class KWin script looks for
     app.setApplicationDisplayName("CyberNeon Drawer")
     app.setDesktopFileName(INSTANCE)
@@ -183,10 +186,15 @@ def main():
 
     QQuickStyle.setStyle("Basic")
     engine = QQmlApplicationEngine()
+    for path in ("/usr/lib/qt6/qml", "/usr/lib64/qt6/qml", "/usr/lib/x86_64-linux-gnu/qt6/qml"):
+        if os.path.isdir(path + "/org/kde/layershell"):
+            engine.addImportPath(path)
     backend = Backend()
     engine.rootContext().setContextProperty("backend", backend)
     engine.load(QUrl.fromLocalFile(str(HERE / "Drawer.qml")))
     if not engine.rootObjects():
+        print("CyberNeon Drawer needs layer-shell-qt (sudo pacman -S layer-shell-qt) and a Wayland session.",
+              file=sys.stderr)
         return 1
     return app.exec()
 

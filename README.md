@@ -59,20 +59,22 @@ Put your music in `~/Music` (Windows: `Music`) or press **FOLDER**. `Space` play
 Make an album with **NEW ALBUM**, then add songs with **+ FILES**, the **+** button on a song, or by dragging
 files into the window. The full guide is in [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 
-## CyberNeon Drawer (Linux, KDE Plasma)
+## CyberNeon Drawer (Linux, KDE Plasma on Wayland)
 
 A neon side panel that slides out when you push the mouse against the **left screen edge**: clock, now playing
 (with controls and visualizer), CPU / RAM / disk / temperature / network, volume, quick launchers and notes.
 
 ```bash
+sudo pacman -S layer-shell-qt          # once
 bash drawer/install-drawer.sh          # install and start; "remove" uninstalls
 ```
 
-- Needs `pyside6`; volume uses `wpctl` (PipeWire) or `pactl`.
-- The drawer closes when the mouse leaves it, when you click another window, or with Esc. **PIN** keeps it open.
+- Needs `pyside6` (from the distribution, so it uses the system Qt) and `layer-shell-qt`.
+  Volume uses `wpctl` (PipeWire) or `pactl`.
+- The windows are Wayland layer-shell surfaces, like Plasma's own panels, so they also show over the desktop
+  in "Show Desktop" mode. A 2 px invisible strip on the left edge notices the pointer.
+- The drawer closes when the mouse leaves it or with Esc. **PIN** keeps it open.
 - Launcher buttons: edit `~/.config/cyberneon-drawer/launchers.json` (`[{"name": "FILES", "cmd": "dolphin"}, ...]`).
-- How it works: a small KWin script (`drawer/kwin/`) listens to the screen edge and places the window; the app draws and animates it.
-  If the left edge has another action in System Settings > Screen Edges, set it to "No Action".
 
 ## Build the Windows installer yourself
 

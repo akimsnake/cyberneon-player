@@ -1,56 +1,52 @@
 #!/usr/bin/env bash
-# Installs the CyberNeon Drawer (slides out from the left screen edge) and its KWin script.
+# Installs the CyberNeon Drawer: a neon panel that slides out from the left screen edge (Wayland, KDE Plasma).
 #   install:  bash drawer/install-drawer.sh
 #   remove:   bash drawer/install-drawer.sh remove
 set -e
 SRC="$(cd "$(dirname "$0")" && pwd)"
-KWIN_PKG="$SRC/kwin/cyberneon-drawer"
 AUTOSTART="$HOME/.config/autostart/cyberneon-drawer.desktop"
 APPS="$HOME/.local/share/applications/cyberneon-drawer.desktop"
 
-kwin_call() {                      # qdbus6 / qdbus-qt6 / qdbus, whichever exists
+kwin_call() {
   for q in qdbus6 qdbus-qt6 qdbus; do
     if command -v "$q" >/dev/null 2>&1; then "$q" org.kde.KWin "$@" >/dev/null 2>&1 && return 0; fi
   done
   return 1
 }
 
-reload_script() {                  # KWin keeps the old script in memory: unload it, switch off, switch on
+# the first version used a KWin script; it is not needed any more, take it away
+remove_old_script() {
   kwin_call /Scripting org.kde.kwin.Scripting.unloadScript cyberneon-drawer || true
-  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled false
-  reconfigure
-  sleep 1
-  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled true
-  reconfigure
-}
-
-reconfigure() {
-  for q in qdbus6 qdbus-qt6 qdbus; do
-    if command -v "$q" >/dev/null 2>&1; then "$q" org.kde.KWin /KWin reconfigure >/dev/null 2>&1 && return 0; fi
-  done
-  dbus-send --session --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
+  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled false 2>/dev/null || true
+  kpackagetool6 --type=KWin/Script --remove cyberneon-drawer >/dev/null 2>&1 || true
+  kwin_call /KWin reconfigure || true
 }
 
 if [ "${1:-}" = "remove" ]; then
   pkill -f "drawer/drawer.py" 2>/dev/null || true
-  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled false
-  kpackagetool6 --type=KWin/Script --remove cyberneon-drawer >/dev/null 2>&1 || true
+  remove_old_script
   rm -f "$AUTOSTART" "$APPS" "$HOME/.local/bin/cyberneon-drawer"
-  reconfigure
   echo "Drawer removed."
   exit 0
 fi
 
-mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/autostart"
+if [ ! -d /usr/lib/qt6/qml/org/kde/layershell ] && [ ! -d /usr/lib64/qt6/qml/org/kde/layershell ]; then
+  echo "Missing: layer-shell-qt.   sudo pacman -S layer-shell-qt"
+  exit 1
+fi
+if [ "${XDG_SESSION_TYPE:-}" != "wayland" ]; then
+  echo "Note: this drawer needs a Wayland session (yours: ${XDG_SESSION_TYPE:-unknown})."
+fi
 
-# launcher
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/autostart"
+remove_old_script
+
 cat > "$HOME/.local/bin/cyberneon-drawer" << LAUNCH
 #!/usr/bin/env bash
 exec python3 "$SRC/drawer.py" "\$@"
 LAUNCH
 chmod 755 "$HOME/.local/bin/cyberneon-drawer"
 
-# desktop file: lets Wayland match the window to the app; hidden from the menu
 cat > "$APPS" << DESKTOP
 [Desktop Entry]
 Type=Application
@@ -62,7 +58,6 @@ NoDisplay=true
 StartupWMClass=cyberneon-drawer
 DESKTOP
 
-# start at login
 cat > "$AUTOSTART" << DESKTOP
 [Desktop Entry]
 Type=Application
@@ -72,17 +67,16 @@ Terminal=false
 X-KDE-autostart-after=panel
 DESKTOP
 
-# KWin script (it moves the window and listens to the screen edge)
-kpackagetool6 --type=KWin/Script --upgrade "$KWIN_PKG" >/dev/null 2>&1 || kpackagetool6 --type=KWin/Script --install "$KWIN_PKG"
-reload_script
-
 # (re)start the drawer
 pkill -f "drawer/drawer.py" 2>/dev/null || true
-nohup "$HOME/.local/bin/cyberneon-drawer" >/dev/null 2>&1 &
-
-echo "Installed. Push the mouse against the LEFT edge of the screen."
-echo "  widgets list:  ~/.config/cyberneon-drawer/launchers.json   (edit, then restart: bash $0)"
-echo "  notes:         ~/.local/share/cyberneon-drawer/notes.txt"
-echo "If nothing happens: System Settings > Workspace Behavior > Screen Edges, set the left edge to 'No Action'"
-echo "(the drawer script uses that edge), and check Window Management > KWin Scripts that CyberNeon Drawer is ticked."
-echo "Remove everything:  bash $0 remove"
+sleep 0.5
+nohup "$HOME/.local/bin/cyberneon-drawer" >/tmp/cyberneon-drawer.log 2>&1 &
+sleep 1.5
+if pgrep -f "drawer/drawer.py" >/dev/null; then
+  echo "Installed and running. Push the mouse against the LEFT edge of the screen."
+else
+  echo "The drawer did not start. Log:"; cat /tmp/cyberneon-drawer.log
+fi
+echo "  launcher buttons:  ~/.config/cyberneon-drawer/launchers.json   (edit, then run this script again)"
+echo "  notes:             ~/.local/share/cyberneon-drawer/notes.txt"
+echo "  remove:            bash $0 remove"
