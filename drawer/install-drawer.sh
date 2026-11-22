@@ -8,6 +8,22 @@ KWIN_PKG="$SRC/kwin/cyberneon-drawer"
 AUTOSTART="$HOME/.config/autostart/cyberneon-drawer.desktop"
 APPS="$HOME/.local/share/applications/cyberneon-drawer.desktop"
 
+kwin_call() {                      # qdbus6 / qdbus-qt6 / qdbus, whichever exists
+  for q in qdbus6 qdbus-qt6 qdbus; do
+    if command -v "$q" >/dev/null 2>&1; then "$q" org.kde.KWin "$@" >/dev/null 2>&1 && return 0; fi
+  done
+  return 1
+}
+
+reload_script() {                  # KWin keeps the old script in memory: unload it, switch off, switch on
+  kwin_call /Scripting org.kde.kwin.Scripting.unloadScript cyberneon-drawer || true
+  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled false
+  reconfigure
+  sleep 1
+  kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled true
+  reconfigure
+}
+
 reconfigure() {
   for q in qdbus6 qdbus-qt6 qdbus; do
     if command -v "$q" >/dev/null 2>&1; then "$q" org.kde.KWin /KWin reconfigure >/dev/null 2>&1 && return 0; fi
@@ -58,8 +74,7 @@ DESKTOP
 
 # KWin script (it moves the window and listens to the screen edge)
 kpackagetool6 --type=KWin/Script --upgrade "$KWIN_PKG" >/dev/null 2>&1 || kpackagetool6 --type=KWin/Script --install "$KWIN_PKG"
-kwriteconfig6 --file kwinrc --group Plugins --key cyberneon-drawerEnabled true
-reconfigure
+reload_script
 
 # (re)start the drawer
 pkill -f "drawer/drawer.py" 2>/dev/null || true
