@@ -145,3 +145,13 @@ the page is hidden.
   playlist file into a new album of your own. Relative paths, Windows paths and file:// links work; missing files are skipped.
 - **Now playing**: a desktop notification with cover, title, artist and album on every new song.
   The `NOTIFY: ON/OFF` button in the top bar switches it. Nothing pops up on resume.
+
+## Windows installer (for a friend)
+
+The code also runs on Windows. The .exe cannot be built on Linux, so there are two ways:
+1. On a Windows PC: double-click `windows\build-windows.bat` (needs Python; for the installer also
+   Inno Setup: `winget install JRSoftware.InnoSetup`). Result: `windows\Output\CyberNeonPlayer-Setup.exe`.
+2. Without Windows: put this folder on GitHub; `.github/workflows/build-windows.yml` builds the installer in the cloud
+   (Actions tab -> artifact "CyberNeonPlayer-Setup").
+Windows has no Plasma widget; the player, tray icon, notifications and resume work. Music folder: Music; ffmpeg is only
+needed for raw .bin disc images.

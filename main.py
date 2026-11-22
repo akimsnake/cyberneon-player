@@ -21,13 +21,18 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 import library
 import viz
 
-HERE = Path(__file__).resolve().parent
+IS_WIN = os.name == "nt"
+HERE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))      # _MEIPASS: inside the Windows .exe build
 SORTS = ["album", "artist", "year", "manual"]      # manual = your own order (drag albums)
 RUNTIME = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
-SOCKET = str(RUNTIME / "cyberneon-player.sock")
+SOCKET = "cyberneon-player" if IS_WIN else str(RUNTIME / "cyberneon-player.sock")   # Windows: a named pipe
 HTTP_PORT = 47615                    # read-only state for the widget, 127.0.0.1 only
-CACHE = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "cyberneon-player"
-DATA = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))) / "cyberneon-player"
+if IS_WIN:
+    _LOCAL = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "CyberNeonPlayer"
+    CACHE, DATA = _LOCAL / "cache", _LOCAL / "data"
+else:
+    CACHE = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "cyberneon-player"
+    DATA = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))) / "cyberneon-player"
 BIN_CACHE = CACHE / "bin"            # disc images (.bin) converted to FLAC, once
 library.BIN_CACHE_DIR = str(BIN_CACHE)
 USERFILE = DATA / "albums.json"      # your own albums
@@ -1192,6 +1197,17 @@ def make_icon():
 
 def already_running(show):
     """If another instance is alive, ask it to show its window and report True."""
+    if IS_WIN:
+        from PySide6.QtNetwork import QLocalSocket
+        c = QLocalSocket()
+        c.connectToServer(SOCKET)
+        if not c.waitForConnected(1000):
+            return False
+        c.write(b"show\n" if show else b"state\n")
+        c.waitForBytesWritten(1000)
+        c.waitForReadyRead(1000)
+        c.disconnectFromServer()
+        return True
     import socket
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(1)
@@ -1208,10 +1224,12 @@ def already_running(show):
 
 def main():
     background = "--background" in sys.argv
-    if already_running(show=not background):
+    if not IS_WIN and already_running(show=not background):
         return
 
     app = QApplication(sys.argv)
+    if IS_WIN and already_running(show=not background):      # (the named pipe needs the Qt application to exist)
+        return
     app.setApplicationName("cyberneon-player")
     app.setApplicationDisplayName("CyberNeon Player")
     app.setDesktopFileName("cyberneon-player")     # matches cyberneon-player.desktop, so the panel can pin it

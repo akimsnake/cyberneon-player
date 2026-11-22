@@ -1,0 +1,35 @@
+# Builds the Windows installer in the cloud (free for public repos): push this folder to GitHub,
+# open the Actions tab, download the artifact "CyberNeonPlayer-Setup".
+name: build-windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build exe
+        shell: cmd
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r windows\requirements.txt
+          pyinstaller --noconfirm --clean --windowed --name CyberNeonPlayer --icon windows\cyberneon-player.ico --add-data "Main.qml;." --add-data "NeonButton.qml;." --add-data "NeonSlider.qml;." --add-data "NeonField.qml;." --add-data "NeonBars.qml;." --add-data "Blob.qml;." --add-data "cyberneon-player.svg;." --collect-data PySide6 --collect-submodules PySide6.QtQuick --collect-submodules PySide6.QtMultimedia main.py
+      - name: Smoke test (starts, then is killed)
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\CyberNeonPlayer\CyberNeonPlayer.exe -PassThru
+          Start-Sleep 8
+          if ($p.HasExited) { throw "exe exited early with code $($p.ExitCode)" }
+          Stop-Process $p
+      - name: Installer
+        shell: cmd
+        run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows\installer.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CyberNeonPlayer-Setup
+          path: windows/Output/CyberNeonPlayer-Setup.exe
