@@ -18,7 +18,7 @@ QtObject {
         id: hot
         width: 2
         height: Screen.height - app.bottomReserve
-        visible: backend.available          // "desktop only": the edge strip disappears while windows are open
+        visible: true                       // always mapped: showing and hiding it made KWin report new windows in a loop
         flags: Qt.FramelessWindowHint
         color: "transparent"
         title: "CyberNeon Drawer edge"
@@ -31,7 +31,7 @@ QtObject {
         HoverHandler {
             onHoveredChanged: {
                 if (!hovered) win.armed = true
-                else if (win.armed && !win.shown) win.openDrawer()
+                else if (win.armed && !win.shown && backend.available) win.openDrawer()
             }
         }
     }
