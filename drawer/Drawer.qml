@@ -8,21 +8,21 @@ import org.kde.layershell 1.0 as LayerShell
 //  - the drawer itself, shown while the pointer is on it, with a slide-in / slide-out animation
 QtObject {
     id: app
+    property int bottomReserve: 64            // space left for the bottom Plasma panel (px)
 
     property var hotZone: Window {
         id: hot
         width: 2
-        height: 1000
+        height: Screen.height - app.bottomReserve
         visible: true
         flags: Qt.FramelessWindowHint
         color: "transparent"
         title: "CyberNeon Drawer edge"
         LayerShell.Window.scope: "cyberneon-drawer-edge"
-        LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+        LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop
         LayerShell.Window.layer: LayerShell.Window.LayerTop
         LayerShell.Window.exclusionZone: -1
         LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityNone
-        LayerShell.Window.desiredSize: Qt.size(2, 0)
 
         HoverHandler {
             onHoveredChanged: {
@@ -35,17 +35,16 @@ QtObject {
     property var drawerWindow: Window {
     id: win
     width: 380
-    height: 1000
+    height: Screen.height - app.bottomReserve
     visible: false
     flags: Qt.FramelessWindowHint
     color: "transparent"
     title: "CyberNeon Drawer"
     LayerShell.Window.scope: "cyberneon-drawer"
-    LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+    LayerShell.Window.anchors: LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorTop
     LayerShell.Window.layer: LayerShell.Window.LayerTop
     LayerShell.Window.exclusionZone: -1
     LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityOnDemand
-    LayerShell.Window.desiredSize: Qt.size(380, 0)
 
     readonly property color panel: "#14091F"
     readonly property color edge: "#3B1F6B"
